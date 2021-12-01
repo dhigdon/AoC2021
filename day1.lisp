@@ -8,12 +8,12 @@
 
 ;; Problem is to count the number of increasing readings
 ;; in the data set.
-(defun scanr (last rest count)
-  "Call as (recursive-scan (car l) (cdr l) 0)"
-  (if (and last rest)
-    (scanr (car rest) 
-           (cdr rest)
-           (if (> (car rest) last)
+(defun scanr (last data count)
+  "Call as (scanr (car l) (cdr l) 0)"
+  (if data
+    (scanr (first data) 
+           (rest data)
+           (if (> (first data) last)
              (1+ count)
              count))
     count))
@@ -21,6 +21,7 @@
 (defun scan (numbers)
   (scanr (car numbers) (cdr numbers) 0))
 
+;; Part 1
 (defun run-part1 ()
   (scan (read-numbers "day1.txt")))
 

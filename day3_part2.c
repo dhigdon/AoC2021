@@ -10,35 +10,26 @@
 
 typedef char TEntry[LINE_WIDTH];
 typedef TEntry TData[LINE_MAX];
-
 TData data;
 
-// Could dynamically allocate these to match data
-int zeroes[LINE_WIDTH];
-int ones[LINE_WIDTH];
-
 int candidates[LINE_MAX];
+int zeroes;
+int ones;
 
 //------------------------------------------------------------------------------
 
 // Count zeroes and ones in the candidate entries
-void tabulate(int count)
+void tabulate(int digit, int count)
 {
-   // Zero the counts
-   for (int i = 0; i < LINE_WIDTH; ++i)
-      ones[i] = zeroes[i] = 0;
+   zeroes = ones = 0;
 
-   // Scan each candidate in entry, counting zeroes and ones.
    for (int i = 0; i < count; ++i)
    {
-      char * entry = data[candidates[i] ];
-      for (int digit = 0; entry[digit]; ++digit)
+      const char * entry = data[candidates[i]];
+      switch (entry[digit])
       {
-         switch (entry[digit])
-         {
-         case '0': ++zeroes[digit]; break;
-         case '1': ++ones[digit];   break;
-         }
+      case '0': ++zeroes; break;
+      case '1': ++ones;   break;
       }
    }
 }
@@ -105,9 +96,9 @@ int main(int argc, char** argv)
    // Run through each digit, filtering down
    for (int digit = 0; digit < digits && cc > 1; ++digit)
    {
-      tabulate(cc);
+      tabulate(digit, cc);
       // Oxygen takes MOST common digit, ties go to 1
-      const char select = (ones[digit] >= zeroes[digit]) ? '1' : '0';
+      const char select = (ones >= zeroes) ? '1' : '0';
       cc = filter(cc, digit, select);
    }
 
@@ -123,9 +114,9 @@ int main(int argc, char** argv)
 
    for (int digit = 0; digit < digits && cc > 1; ++digit)
    {
-      tabulate(cc);
+      tabulate(digit, cc);
       // Scrubber takes LEAST common digit, ties go to 0
-      const char select = (ones[digit] < zeroes[digit]) ? '1' : '0';
+      const char select = (ones < zeroes) ? '1' : '0';
       cc = filter(cc, digit, select);
    }
 

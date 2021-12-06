@@ -12,16 +12,16 @@
 
 (defun parse-line (str)
   "from-x,from-y -> to-x,to-y"
-  (let (v i (coord (make-seg)))
+  (let (v i (seg (make-seg)))
     (multiple-value-setq (v i) (parse-seg str 0))
-    (setf (seg-from-x coord) v)
+    (setf (seg-from-x seg) v)
     (multiple-value-setq (v i) (parse-seg str (+ i 1)))
-    (setf (seg-from-y coord) v)
+    (setf (seg-from-y seg) v)
     (multiple-value-setq (v i) (parse-seg str (+ i 4)))
-    (setf (seg-to-x coord) v)
+    (setf (seg-to-x seg) v)
     (multiple-value-setq (v i) (parse-seg str (+ i 1)))
-    (setf (seg-to-y coord) v)
-    coord))
+    (setf (seg-to-y seg) v)
+    seg))
 
 (defun read-segs (filename)
   (with-open-file (s (pathname filename))
@@ -80,9 +80,9 @@
       (plotline-high x0 y0 x1 y1))))
 
 
-(defun run-seg (coord)
-  (plotline (seg-from-x coord) (seg-from-y coord)
-            (seg-to-x coord) (seg-to-y coord)))
+(defun run-seg (seg)
+  (plotline (seg-from-x seg) (seg-from-y seg)
+            (seg-to-x seg) (seg-to-y seg)))
 
 (defun render (field)
   (let ((width 0) (height 0))
@@ -98,10 +98,10 @@
 
 ;; PART1 - find overlaps of NON-DIAGONAL LINES ONLY
 
-(defun diagonal-p (coord)
-  "Is the coord a diagonal line?"
-  (and (/= (seg-from-x coord) (seg-to-x coord))
-       (/= (seg-from-y coord) (seg-to-y coord))))
+(defun diagonal-p (seg)
+  "Is the seg a diagonal line?"
+  (and (/= (seg-from-x seg) (seg-to-x seg))
+       (/= (seg-from-y seg) (seg-to-y seg))))
 
 (defun part1 (fn)
   (let ((data (remove-if 'diagonal-p (read-segs fn)))

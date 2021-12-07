@@ -17,39 +17,36 @@
 (defun diff (x y) (abs (- x y)))
 
 (defun cost1 (crabs n)
-  "Compute the fuel cost for all given crabs to move to position n"
+  "Fuel cost for all given crabs to move to position n"
   (loop for c in crabs summing (diff c n)))
 
 (defun median (crabs)
+  "The central value of crabs. Assumes list is sorted."
   (elt crabs (floor (length crabs) 2)))
 
 (defun part1 (crabs)
-  "Part 1 is easy - just take the middle value"
+  "Part 1 is easy - just take the middle value.
+  Retursn the fuel cost and position"
   (let ((v (median crabs)))
-    (cons v (cost1 crabs v))))
+    (values (cost1 crabs v) v)))
 
 ;; Part 2 actually requires search it would seem.
-;; There are smarter ways to do this, but this
-;; runs nearly instantly and is easy to undertand.
 
 (defun sum-to (n)
   "Sum of numbers from 0 to n"
   (values (floor (* n (1+ n)) 2)))
 
 (defun cost2 (crabs n)
+  "Fuel cost for all crabs to reach position n"
   (loop for c in crabs summing (sum-to (diff c n))))
+
+;; Crabs is a sorted list, so we can easily
+;; find the largest and smallest values
+(defun min-val (crabs) (first crabs))
+(defun max-val (crabs) (car (last crabs)))
 
 (defun part2 (crabs)
   "Search numbers looking for minimum cost"
-  (let ((mv 0)
-        (mc most-positive-fixnum))
-    ; Scan over the range of values in the data
-    ; The data's sorted, so we can just look at the last
-    ; value for the maximum possible position.
-    (dotimes (n (1+ (elt crabs (1- (length crabs))))
-                (cons mv mc))
-      (let ((c (cost2 crabs n)))
-        (when (< c mc)
-          (setf mv n
-                mc c))))))
+  (loop for n from (min-val crabs) to (max-val crabs)
+        minimizing (cost2 crabs n)))
 

@@ -23,10 +23,13 @@
                       (position e *closers*)
                       1)))))
 
+(defun eos-p (c)
+  "Does 'c' denote he end of signal?"
+  (or (null c) (char= c #\Newline)))
+
 (defun read-to-eol (s)
-  (loop for c = (read-char s nil nil)
-        while c
-        until (char= #\Newline c)))
+  "Read all characters until the EOL or EOF"
+  (loop for c = (read-char s nil nil) until (eos-p c)))
 
 (defun day10 (fn)
   (with-open-file (s (pathname fn))
@@ -35,7 +38,7 @@
         for c = (read-char s nil nil)
         do (cond
              ;; End of signal
-             ((or (null c) (char= c #\Newline))
+             ((eos-p c)
               (when stack
                 (push (score-incomplete stack) incompletes)
                 (setf stack nil)))
@@ -56,10 +59,10 @@
         while c)
 
       (values
-        ; Part1 - sum of the first 3 error values
+        ; Part1 - sum of the error values
         (reduce #'+ errors)
 
-        ; Part2 - middle 
+        ; Part2 - middle score
         (let ((scores (sort incompletes #'<)))
           (elt scores (floor (length scores) 2)))))))
 

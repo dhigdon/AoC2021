@@ -2,6 +2,7 @@
 
 (ql:quickload :hadt)
 
+(declaim (ftype (function (character) (integer 0 9)) char-digit))
 (defun char-digit (c)
   (- (char-code c) (char-code #\0)))
 
@@ -17,7 +18,7 @@
 (defun read-data (file)
   (with-open-file (s (pathname file))
     (loop with field = (make-array (read-data-size file)
-                                   :element-type 'integer
+                                   :element-type '(integer 0 9)
                                    :initial-element 0)
           for l = (read-line s nil)
           for row upfrom 0
@@ -28,12 +29,15 @@
           finally (return field))))
 
 (defun get-value (field row col)
+  (declare (fixnum row col) (array field))
   (aref field row col))
 
 (defun neighbor-values (field row col)
+  (declare (fixnum row col) (array field))
   (let ((rows (1- (array-dimension field 0)))
         (cols (1- (array-dimension field 1)))
         result)
+    (declare (fixnum rows cols))
     (unless (zerop row) (push (get-value field (1- row) col) result))
     (when (< row rows)  (push (get-value field (1+ row) col) result))
     (unless (zerop col) (push (get-value field row (1- col)) result))

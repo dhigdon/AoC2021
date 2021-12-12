@@ -1,17 +1,19 @@
 ;;; Day 12 - Passage Pathing
 
-(ql:quickload "hadt")
-
 (defun trim-eos (str)
   "Remove the CRLF from a string's end"
   (string-right-trim '(#\Return #\Newline) str))
 
 (defun small-p (from)
+  (declare (string from))
   (lower-case-p (char from 0)))
 
-(defun large-p (from) (not (small-p from)))
+(defun large-p (from)
+  (declare (string from))
+  (not (small-p from)))
 
 (defun push-hashvalue (key v table)
+  (declare (string key v) (hash-table table))
   (let ((ov (gethash key table)))
     (pushnew v ov :test #'string=)
     (setf (gethash key table) ov)))
@@ -24,6 +26,7 @@
   ; start and end are bidirectional. The caller is
   ; responsible for making sure that the big/small room
   ; restrictions are obeyed.
+  (declare (string from to) (hash-table table))
   (cond ((string= from "start") (push-hashvalue from to table))
         ((string= to   "start") (push-hashvalue to from table))
         ((string= from "end")   (push-hashvalue to from table))
@@ -44,51 +47,55 @@
                   connections)
       finally (return connections))))
 
-(defun show-data (data)
-  (maphash (lambda (key val) (format t "Key ~A = ~A~%" key val))
-           data))
+;; ------------------------------------------------------------
+
+(defstruct srch
+  (pos  ""  :type string)
+  (path nil :type cons)
+  freebee)
+
+(defun get-nexts (context table)
+  "Return the list of neighbor nodes in table"
+  (gethash (srch-pos context) table))
 
 ;; ------------------------------------------------------------
 
-(defstruct srch pos path freebee)
-
-;; ------------------------------------------------------------
-
-(defun has-duplicate-smalls (l)
+(defun has-duplicate-smalls-p (l)
   (cond ((null l) nil)
         ((large-p (car l))
-         (has-duplicate-smalls (cdr l)))
+         (has-duplicate-smalls-p (cdr l)))
         ((member (car l) (cdr l) :test #'string=) t)
-        (t (has-duplicate-smalls (cdr l)))))
+        (t (has-duplicate-smalls-p (cdr l)))))
 
 (defun count-of (i list)
+  "Number of times the string i appears in list"
   (loop for l in list counting (string= i l)))
 
 (defun disallowed (dest context)
+  "Is dest disallowed in the given context?"
   (and (small-p dest)
        (> (count-of dest (srch-path context))
           (if (srch-freebee context) 0 1))))
 
-(defun enqueue-srch (pos path queue)
-  (hadt:enqueue (make-srch :pos pos 
-                           :path (or path (list pos))
-                           :freebee (has-duplicate-smalls path))
-                queue))
+(defun new-srch (pos path)
+  "Create a srch from pos, having come from path"
+  (make-srch :pos pos 
+             :path (or path (list pos))
+             :freebee (has-duplicate-smalls-p path)))
 
 (defun visit (links)
-  (let (paths (queue (hadt:make-queue)))
-    (enqueue-srch "start" nil queue)
+  (let (paths queue)
+    (push (new-srch "start" nil) queue)
     (loop
-      until (hadt:queue-empty-p queue)
-      for current = (hadt:dequeue queue)
-      do (progn
-           (loop
-             for dest in (gethash (srch-pos current) links)
-             for path = (cons dest (srch-path current))
-             unless (disallowed dest current)
-             do (if (string= dest "end")
-                  (push (reverse path) paths)
-                  (enqueue-srch dest path queue)))))
+      until (null queue)
+      for current = (pop queue)
+      do (loop
+           for dest in (get-nexts current links)
+           for path = (cons dest (srch-path current))
+           unless (disallowed dest current)
+           do (if (string= dest "end")
+                (push (reverse path) paths)
+                (push (new-srch dest path) queue))))
     paths))
 
 

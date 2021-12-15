@@ -1,9 +1,6 @@
 ;;; Day 15 - Chiton
 ;;; Minimal cost pathfinding
 
-(ql:quickload "priority-queue")
-(import :priority-queue)
-
 (defun trim-eos (str)
   (string-right-trim '(#\Return #\Linefeed) str))
 
@@ -48,11 +45,16 @@
   (defun last-coord ()
     (make-coord :row (1- (first bounds)) :col (1- (second bounds))))
 
-  (defun get-cost (c) (gethash c costs 0))
+  (defun get-cost (c)
+    (declare (coord c))
+    (the fixnum (gethash c costs 0)))
 
-  (defun set-cost (c v) (setf (gethash c costs) v))
+  (defun set-cost (c v)
+    (declare (coord c) (fixnum v))
+    (setf (gethash c costs) v))
 
   (defun valid-coord-p (c)
+    (declare (coord c))
     (let ((end (last-coord)))
       (and (>= (coord-row end) (coord-row c) 0)
            (>= (coord-col end) (coord-col c) 0))))
@@ -63,12 +65,12 @@
 
   )
 
-(defun coord< (a b) (< (get-cost a) (get-cost b)))
+(defun cost< (a b) (< (get-cost a) (get-cost b)))
 
 (defun merge-neighbors (n q)
   "Priority queue by way of keeping our list sorted."
   ;; This is a shitty way to do a priority queue, but it will work for now
-  (merge 'list (sort n #'coord<) q #'coord<))
+  (merge 'list (sort n #'cost<) q #'cost<))
 
 (defun neighbors (c)
   "Returns all valid unvisited neighbors"
@@ -83,8 +85,19 @@
         (make-coord :row row :col (1+ col))
         (make-coord :row (1+ row) :col col)))))
 
+(defun wrap9 (n)
+  (declare (fixnum n))
+  (1+ (mod (1- n) 9)))
+
 (defun get-risk (c grid)
-  (aref grid (coord-row c) (coord-col c)))
+  ; The grid wraps around, but increases risk each "iteration"
+  ; We can use remainders to compute the risk of any coordinate,
+  ; not just ones inside the grid
+  (multiple-value-bind (rt wr)
+    (floor (coord-row c) (array-dimension grid 0))
+    (multiple-value-bind (ct wc)
+      (floor (coord-col c) (array-dimension grid 1))
+      (wrap9 (+ rt ct (aref grid wr wc))))))
 
 ;; Use BFS to find the cheapest path
 (defun find-path-cost (grid start end)
@@ -112,4 +125,10 @@
 
 ;; Part 2 - the maps tesselate in both directions,
 ;; adding (tile# * (threat + 1)) MOD 9 each direction
-;; We can do that by 
+;; We can do that by modifying get-risk and last-coord
+(defun part2 (d)
+  (let ((rows (array-dimension d 0))
+        (cols (array-dimension d 1)))
+    (init-costs (list (* 5 rows) (* 5 cols)))
+    (find-path-cost d (first-coord) (last-coord))))
+
